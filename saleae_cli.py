@@ -3,6 +3,10 @@ import os.path
 import saleae
 import argparse
 import mysql.connector
+import csv
+from csv import writer
+from csv import reader
+import datetime
 
 def validate_path( path, argument_name ):
     if path != None:
@@ -56,7 +60,7 @@ for x in range(args.capture_count):
         if analyzers.count == 0:
             print('Warning: analyzer export path was specified, but no analyzers are present in the capture')
         for analyzer in analyzers:
-            file_name = '{0}.csv'.format(x, analyzer[0])
+            file_name = '{0}_CAN.csv'.format(x, analyzer[0])
             save_path = os.path.join(args.export_analyzers, file_name)
             print('exporting analyzer ' + analyzer[0] + ' to ' + save_path)
             s.export_analyzer(analyzer[1], save_path)
@@ -69,12 +73,44 @@ if args.exit is True:
         # ignore errors from exit command, since it will raise due to socket disconnect.
         pass
 
-        # MYSQL code
 
+# Timing code
+numoffiles1 = 0
+turnoffbit1 = 0
+while turnoffbit1 == 0:
+    thefilepath = "C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\{}.csv" .format(numoffiles1)
+    file_exists = os.path.exists(thefilepath)
+    if file_exists:
+        # Open the input_file in read mode and output_file in write mode
+        thefile = "C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\{}_CAN.csv" .format(numoffiles1)
+        the2ndfile = "C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\{}.csv" .format(numoffiles1) 
+        with open(thefile, 'r') as read_obj, \
+        open(the2ndfile, 'w', newline='') as write_obj:
+        # Create a csv.reader object from the input file object
+        csv_reader = reader(read_obj)
+        next(csv_reader)
+        # Create a csv.writer object from the output file object
+        csv_writer = writer(write_obj)
+        # Write the Field
+        mydict =['Time[s]', 'Packet', 'Type', 'Identifier', 'Control', 'Data', 'CRC', 'ACK', 'RealTime']
+        csv_writer.writerow(mydict)
+        # Read each row of the input csv file as list
+        for row in csv_reader:
+            # Append the default text in the row / list
+            default_text = datetime.datetime.now()
+            row.append(default_text)
+        # Add the updated row / list to the output file
+            csv_writer.writerow(row)
+    else:
+        turnoffbit1 = 1
+        print("No More files")
+
+
+# MYSQL code
 print("Hello World")
 conn = mysql.connector.connect(
     host="localhost",
-    database="candata",
+who     database="candata",
     user="root",
     password="morenog" )
 
@@ -85,12 +121,11 @@ turnoffbit = 0
 while turnoffbit == 0:
     thefilepath = "C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\{}.csv" .format(numoffiles)
     file_exists = os.path.exists(thefilepath)
-    true = "True"
     if file_exists:
         display = 'Importing capture number {}'.format(numoffiles)
         print(display)
         cursor = conn.cursor()
-        createtable = "CREATE TABLE Captures{} (Time varchar(255), Packet varchar(255), Type varchar(255), Identifier varchar(255), Control varchar(255), Data varchar(255), CRC varchar(255), ACK varchar(255));" .format(numoffiles)
+        createtable = "CREATE TABLE Captures{} (Time varchar(255), Packet varchar(255), Type varchar(255), Identifier varchar(255), Control varchar(255), Data varchar(255), CRC varchar(255), ACK varchar(255), RealTime varchar(255));" .format(numoffiles)
         cursor.execute(createtable)
         query = "LOAD DATA INFILE '{}.csv' INTO TABLE Captures{} FIELDS TERMINATED BY ',' IGNORE 1 ROWS;" .format(numoffiles, numoffiles)
         cursor.execute(query)
