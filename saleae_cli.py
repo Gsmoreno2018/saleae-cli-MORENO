@@ -1,3 +1,4 @@
+from logging import NullHandler
 import os
 import os.path
 import saleae
@@ -6,7 +7,7 @@ import mysql.connector
 import csv
 from csv import writer
 from csv import reader
-import datetime
+import time
 
 def validate_path( path, argument_name ):
     if path != None:
@@ -78,39 +79,86 @@ if args.exit is True:
 numoffiles1 = 0
 turnoffbit1 = 0
 while turnoffbit1 == 0:
-    thefilepath = "C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\{}.csv" .format(numoffiles1)
+    thefilepath = "C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\{}_CAN.csv" .format(numoffiles1)
     file_exists = os.path.exists(thefilepath)
     if file_exists:
         # Open the input_file in read mode and output_file in write mode
         thefile = "C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\{}_CAN.csv" .format(numoffiles1)
         the2ndfile = "C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\{}.csv" .format(numoffiles1) 
         with open(thefile, 'r') as read_obj, \
-        open(the2ndfile, 'w', newline='') as write_obj:
+        open(the2ndfile, 'w', newline="") as write_obj:
         # Create a csv.reader object from the input file object
-        csv_reader = reader(read_obj)
-        next(csv_reader)
+            csv_reader = reader(read_obj)
+            next(csv_reader)
         # Create a csv.writer object from the output file object
-        csv_writer = writer(write_obj)
+            csv_writer = writer(write_obj)
         # Write the Field
-        mydict =['Time[s]', 'Packet', 'Type', 'Identifier', 'Control', 'Data', 'CRC', 'ACK', 'RealTime']
-        csv_writer.writerow(mydict)
+            mydict =['Time[s]', 'Packet', 'Type', 'Identifier', 'Control', 'Data', 'CRC', 'ACK', 'RealTime']
+            csv_writer.writerow(mydict)
+            counter = 0
         # Read each row of the input csv file as list
-        for row in csv_reader:
-            # Append the default text in the row / list
-            default_text = datetime.datetime.now()
-            row.append(default_text)
+            for row in csv_reader:
+                if row:
+        # Append the default text in the row / list
+                    default_text = time.time()
+                    timestamp = str(default_text)
+                    row.append(timestamp)
         # Add the updated row / list to the output file
-            csv_writer.writerow(row)
+                    noobj = str(row)
+                    a = noobj.replace(" ","")
+                    b= a.replace("]","")
+                    c = b.replace("[","")
+                    write_obj.write(c)
+                    write_obj.write('\n')
+        numoffiles1 = numoffiles1 + 1
+
+            #csv_writer.writerow("Buffer012")
     else:
         turnoffbit1 = 1
         print("No More files")
 
 
+"""
+
+     #Eliminate extra line at the end
+# Find the number of rows
+with open("C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\\0.csv",'r', newline="") as inFile:
+    numRows=0
+    while(inFile.readline()):
+        numRows+=1
+    numRows-=1
+    print("Num Rows: {}".format(numRows))
+    inFile.close()
+
+  
+    # Read and Write only the Datalines
+    # Opening a file
+    inFile = open('C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\\0.csv','r')
+    outFile = open('C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\\1.csv', 'w')
+
+    lineNumber=0;
+    while lineNumber < numRows:
+        if lineNumber==0:
+            tempLine=inFile.read()
+            tempLine.strip('\n')
+            outFile.write(tempLine)
+        else:
+            outFile.write('\n')
+            tempLine=inFile.read()
+            tempLine.strip('\n')
+            outFile.write(tempLine)
+        lineNumber+=1
+    inFile.close()
+    outFile.close()
+
+
+"""
+
 # MYSQL code
 print("Hello World")
 conn = mysql.connector.connect(
     host="localhost",
-who     database="candata",
+    database="candata",
     user="root",
     password="morenog" )
 
@@ -122,18 +170,23 @@ while turnoffbit == 0:
     thefilepath = "C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\{}.csv" .format(numoffiles)
     file_exists = os.path.exists(thefilepath)
     if file_exists:
+        createtable = "CREATE TABLE captures{} (Time varchar(255), Packet varchar(255), Type varchar(255), Identifier varchar(255), Control varchar(255), Data varchar(255), CRC varchar(255), ACK varchar(255), RealTime varchar(255));" .format(numoffiles)
+        cursor = conn.cursor()
+        cursor.execute(createtable)
         display = 'Importing capture number {}'.format(numoffiles)
         print(display)
-        cursor = conn.cursor()
-        createtable = "CREATE TABLE Captures{} (Time varchar(255), Packet varchar(255), Type varchar(255), Identifier varchar(255), Control varchar(255), Data varchar(255), CRC varchar(255), ACK varchar(255), RealTime varchar(255));" .format(numoffiles)
-        cursor.execute(createtable)
-        query = "LOAD DATA INFILE '{}.csv' INTO TABLE Captures{} FIELDS TERMINATED BY ',' IGNORE 1 ROWS;" .format(numoffiles, numoffiles)
-        cursor.execute(query)
+        with open(thefilepath, 'r') as read_obj:
+            csv_reader = reader(read_obj)
+            next(csv_reader)
+            for row in csv_reader:
+                noobj = str(row)
+                a = noobj.replace(" ","")
+                b = a.replace("[","")
+                c = b.replace("]","")
+                query = "INSERT INTO captures{} VALUES ({});" .format(numoffiles, c)
+
+                cursor.execute(query)
         numoffiles = numoffiles + 1
     else:
         turnoffbit = 1
-        print("No More files")
-
-for row in cursor:
-    print(row)
-
+        print("No More files") 
