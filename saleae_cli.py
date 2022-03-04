@@ -148,7 +148,7 @@ with open("C:\ProgramData\MySQL\MySQL Server 8.0\Data\candata\\0.csv",'r', newli
             tempLine.strip('\n')
             outFile.write(tempLine)
         lineNumber+=1
-    inFile.close()
+    inFile.close()a
     outFile.close()
 
 
