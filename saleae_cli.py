@@ -103,6 +103,8 @@ for x in range(args.capture_count):
                 print("No More files")
 
                         # MYSQL code
+
+
             print("Hello World")
             conn = mysql.connector.connect(
                 host="localhost",
@@ -116,6 +118,7 @@ for x in range(args.capture_count):
             file_exists = os.path.exists(thefilepath)
             if file_exists:
                 createtable = "CREATE TABLE captures{} (Time varchar(255), Packet varchar(255), Type varchar(255), Identifier varchar(255), Control varchar(255), Data varchar(255), CRC varchar(255), ACK varchar(255));" .format(x)
+                print(createtable)
                 cursor = conn.cursor()
                 cursor.execute(createtable)
                 display = 'Importing capture number {}'.format(x)
@@ -129,10 +132,10 @@ for x in range(args.capture_count):
                         b = a.replace("[","")
                         c = b.replace("]","")
                         d = c.replace("'", "")
-                        query = "INSERT INTO captures{} VALUES ({});" .format(x, c)
-                        print(query)
-                        cursor = conn.cursor()
+                        print(d)
+                        query = "INSERT INTO captures{} (Time, Packet, Type, Identifier, Control, Data, CRC, ACK) VALUES ({});" .format(x, d)
                         cursor.execute(query)
+                        conn.commit()
             else:
                 print("No More files") 
 
